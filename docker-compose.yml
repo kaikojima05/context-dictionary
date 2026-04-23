@@ -13,6 +13,24 @@ services:
     volumes:
       - dictionary_mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pdiary_root"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: context-dictionary-app
+    restart: unless-stopped
+    ports:
+      - "3210:3210"
+    environment:
+      DATABASE_URL: "mysql://root:diary_root@mysql:3306/context_dictionary"
+      PORT: "3210"
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   dictionary_mysql_data:

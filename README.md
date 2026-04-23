@@ -16,38 +16,41 @@ CLI コーディングエージェント（Claude Code, Copilot CLI, Codex な�
 
 ### 前提条件
 
-- Node.js 18+
 - Docker / Docker Compose
 
-### 手順
+### 起動
 
 ```bash
-# 依存パッケージのインストール
-npm install
-
-# MySQL コンテナの起動
+# MySQL + API サーバーをまとめて起動
 docker compose up -d
 
-# Prisma クライアントの生成 & マイグレーション
-npx prisma generate
-npx prisma migrate dev
-
-# 開発サーバーの起動 (http://localhost:3210)
-npm run dev
+# 初回のみ: マイグレーション実行
+docker compose exec app npx prisma migrate deploy
 ```
 
-### 環境変数
+これだけで API サーバーが `http://localhost:3210` で立ち上がる。
 
-`.env` に以下が設定されている（デフォルト値で動作する）:
+### 停止
 
-| 変数 | デフォルト値 | 説明 |
-|---|---|---|
-| `DATABASE_URL` | `mysql://root:diary_root@localhost:33060/context_dictionary` | MySQL 接続文字列 |
-| `PORT` | `3210` | API サーバーのポート |
+```bash
+docker compose down
+```
 
 ### DB クライアント
 
-Sequel Ace などのGUIクライアントから `localhost:33060` に接続して確認できる。
+Sequel Ace などの GUI クライアントから `localhost:33060` に接続して確認できる。
+
+### ローカル開発（コンテナ外で実行する場合）
+
+コンテナを使わず直接実行したい場合は、`.env` の `DATABASE_URL` を確認した上で:
+
+```bash
+npm install
+docker compose up -d mysql   # DB のみ起動
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
 
 ## 使い方
 
