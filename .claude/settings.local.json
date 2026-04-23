@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(docker --version)",
+      "Bash(docker compose:*)",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsx:*)",
+      "Bash(curl -s http://localhost:3210/health)",
+      "Bash(curl -s -X POST http://localhost:3210/api/entries -H 'Content-Type: application/json' -d '{:*)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:3210/api/entries)",
+      "Bash(curl -s http://localhost:3210/api/tags)"
+    ]
+  }
+}

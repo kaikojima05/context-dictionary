@@ -1,0 +1,18 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: context-dictionary-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: diary_root
+      MYSQL_DATABASE: context_dictionary
+      MYSQL_USER: diary
+      MYSQL_PASSWORD: diary_pass
+    ports:
+      - "33060:3306"
+    volumes:
+      - dictionary_mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  dictionary_mysql_data:

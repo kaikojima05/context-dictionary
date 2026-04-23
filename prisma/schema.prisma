@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Entry {
+  id        Int      @id @default(autoincrement())
+  agent     String   @db.VarChar(50)
+  sessionId String?  @map("session_id") @db.VarChar(100)
+  summary   String   @db.Text
+  learnings Json?
+  decisions Json?
+  context   Json?
+  mood      String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tags      EntryTag[]
+  followUps FollowUp[]
+
+  @@index([agent])
+  @@index([createdAt])
+  @@fulltext([summary])
+  @@map("entries")
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(100)
+
+  entries EntryTag[]
+
+  @@map("tags")
+}
+
+model EntryTag {
+  entryId Int @map("entry_id")
+  tagId   Int @map("tag_id")
+
+  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, tagId])
+  @@map("entry_tags")
+}
+
+model FollowUp {
+  id        Int      @id @default(autoincrement())
+  entryId   Int      @map("entry_id")
+  content   String   @db.Text
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@map("follow_ups")
+}

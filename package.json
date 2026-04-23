@@ -1,0 +1,28 @@
+{
+  "name": "context-dictionary",
+  "version": "0.1.0",
+  "description": "Structured diary system for CLI coding agent conversations",
+  "type": "module",
+  "bin": {
+    "diary": "./src/cli.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "commander": "^13.1.0",
+    "dotenv": "^16.5.0",
+    "fastify": "^5.3.2",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
