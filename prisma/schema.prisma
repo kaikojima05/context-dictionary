@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -7,55 +8,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Entry {
+model Insight {
   id        Int      @id @default(autoincrement())
+  type      String   @db.VarChar(20)
+  content   String   @db.Text
+  detail    String?  @db.MediumText
+  rationale String?  @db.Text
   agent     String   @db.VarChar(50)
+  repo      String?  @db.VarChar(200)
+  branch    String?  @db.VarChar(200)
   sessionId String?  @map("session_id") @db.VarChar(100)
-  summary   String   @db.Text
-  learnings Json?
-  decisions Json?
-  context   Json?
-  mood      String?  @db.VarChar(20)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tags      EntryTag[]
+  tags      InsightTag[]
   followUps FollowUp[]
+  relationsAsSource InsightRelation[] @relation("source")
+  relationsAsTarget InsightRelation[] @relation("target")
 
   @@index([agent])
+  @@index([type])
+  @@index([repo])
   @@index([createdAt])
-  @@fulltext([summary])
-  @@map("entries")
+  @@fulltext([content])
+  @@map("insights")
 }
 
 model Tag {
   id   Int    @id @default(autoincrement())
   name String @unique @db.VarChar(100)
 
-  entries EntryTag[]
+  insights InsightTag[]
 
   @@map("tags")
 }
 
-model EntryTag {
-  entryId Int @map("entry_id")
-  tagId   Int @map("tag_id")
+model InsightTag {
+  insightId Int @map("insight_id")
+  tagId     Int @map("tag_id")
 
-  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@id([entryId, tagId])
-  @@map("entry_tags")
+  @@id([insightId, tagId])
+  @@map("insight_tags")
 }
 
 model FollowUp {
   id        Int      @id @default(autoincrement())
-  entryId   Int      @map("entry_id")
+  insightId Int      @map("insight_id")
   content   String   @db.Text
   resolved  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
-  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
 
   @@map("follow_ups")
+}
+
+model InsightRelation {
+  id       Int    @id @default(autoincrement())
+  sourceId Int    @map("source_id")
+  targetId Int    @map("target_id")
+  type     String @db.VarChar(20)
+
+  source Insight @relation("source", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Insight @relation("target", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, targetId, type])
+  @@index([targetId])
+  @@map("insight_relations")
 }

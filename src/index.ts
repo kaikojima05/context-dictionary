@@ -1,13 +1,13 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import entriesRoutes from "./routes/entries.js";
+import insightsRoutes from "./routes/entries.js";
 import tagsRoutes from "./routes/tags.js";
 import searchRoutes from "./routes/search.js";
 
 const app = Fastify({ logger: true });
 const port = parseInt(process.env.PORT || "3210");
 
-app.register(entriesRoutes);
+app.register(insightsRoutes);
 app.register(tagsRoutes);
 app.register(searchRoutes);
 
