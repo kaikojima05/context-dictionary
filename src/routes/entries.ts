@@ -26,7 +26,26 @@ const createInsightSchema = z.object({
     .optional(),
 });
 
-const updateInsightSchema = createInsightSchema.partial();
+const updateInsightSchema = createInsightSchema.partial().extend({
+  addTags: z.array(z.string()).optional(),
+  removeTags: z.array(z.string()).optional(),
+  addRelations: z
+    .array(
+      z.object({
+        targetId: z.number(),
+        type: z.enum(relationTypes),
+      })
+    )
+    .optional(),
+  removeRelations: z
+    .array(
+      z.object({
+        targetId: z.number(),
+        type: z.enum(relationTypes),
+      })
+    )
+    .optional(),
+});
 
 const includeAll = {
   tags: { include: { tag: true } },
@@ -144,25 +163,63 @@ export default async function insightsRoutes(app: FastifyInstance) {
   app.patch("/api/insights/:id", async (request) => {
     const { id } = request.params as { id: string };
     const body = updateInsightSchema.parse(request.body);
-    const { tags, followUps, relations, ...data } = body;
+    const {
+      tags,
+      addTags,
+      removeTags,
+      followUps,
+      relations,
+      addRelations,
+      removeRelations,
+      ...data
+    } = body;
 
     const numId = parseInt(id);
 
+    // Tags: full replace vs incremental
     if (tags) {
       await prisma.insightTag.deleteMany({ where: { insightId: numId } });
+    } else {
+      if (removeTags?.length) {
+        await prisma.insightTag.deleteMany({
+          where: {
+            insightId: numId,
+            tag: { name: { in: removeTags } },
+          },
+        });
+      }
     }
+
+    // Relations: full replace vs incremental
     if (relations) {
       await prisma.insightRelation.deleteMany({ where: { sourceId: numId } });
+    } else {
+      if (removeRelations?.length) {
+        for (const r of removeRelations) {
+          await prisma.insightRelation.deleteMany({
+            where: {
+              sourceId: numId,
+              targetId: r.targetId,
+              type: r.type,
+            },
+          });
+        }
+      }
     }
+
+    const tagsToCreate = tags ?? addTags;
+    const relationsToCreate = relations ?? addRelations;
 
     return prisma.insight.update({
       where: { id: numId },
       data: {
         ...data,
-        tags: tags?.length ? { create: await upsertTags(tags) } : undefined,
-        relationsAsSource: relations?.length
+        tags: tagsToCreate?.length
+          ? { create: await upsertTags(tagsToCreate) }
+          : undefined,
+        relationsAsSource: relationsToCreate?.length
           ? {
-              create: relations.map((r) => ({
+              create: relationsToCreate.map((r) => ({
                 targetId: r.targetId,
                 type: r.type,
               })),
