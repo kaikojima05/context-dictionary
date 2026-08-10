@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -8,21 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Insight {
-  id        Int      @id @default(autoincrement())
-  type      String   @db.VarChar(20)
-  content   String   @db.Text
-  detail    String?  @db.MediumText
-  rationale String?  @db.Text
-  agent     String   @db.VarChar(50)
-  repo      String?  @db.VarChar(200)
-  branch    String?  @db.VarChar(200)
-  sessionId String?  @map("session_id") @db.VarChar(100)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum InsightType {
+  discovery
+  decision
+  solution
+  issue
+  caveat
+}
 
-  tags      InsightTag[]
-  followUps FollowUp[]
+enum RelationType {
+  relates_to
+  resolves
+  supersedes
+}
+
+model Insight {
+  id        Int         @id @default(autoincrement())
+  type      InsightType
+  content   String      @db.Text
+  detail    String?     @db.MediumText
+  rationale String?     @db.Text
+  agent     String      @db.VarChar(50)
+  repo      String?     @db.VarChar(200)
+  branch    String?     @db.VarChar(200)
+  sessionId String?     @map("session_id") @db.VarChar(100)
+  version   Int         @default(1)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  tags              InsightTag[]
+  followUps         FollowUp[]
   relationsAsSource InsightRelation[] @relation("source")
   relationsAsTarget InsightRelation[] @relation("target")
 
@@ -30,6 +44,9 @@ model Insight {
   @@index([type])
   @@index([repo])
   @@index([createdAt])
+  @@index([updatedAt])
+  @@index([repo, updatedAt])
+  @@index([repo, type, updatedAt])
   @@fulltext([content])
   @@map("insights")
 }
@@ -55,22 +72,25 @@ model InsightTag {
 }
 
 model FollowUp {
-  id        Int      @id @default(autoincrement())
-  insightId Int      @map("insight_id")
-  content   String   @db.Text
-  resolved  Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id         Int       @id @default(autoincrement())
+  insightId  Int       @map("insight_id")
+  content    String    @db.Text
+  resolved   Boolean   @default(false)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  resolvedAt DateTime? @map("resolved_at")
 
   insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
 
+  @@index([insightId, resolved])
   @@map("follow_ups")
 }
 
 model InsightRelation {
-  id       Int    @id @default(autoincrement())
-  sourceId Int    @map("source_id")
-  targetId Int    @map("target_id")
-  type     String @db.VarChar(20)
+  id       Int          @id @default(autoincrement())
+  sourceId Int          @map("source_id")
+  targetId Int          @map("target_id")
+  type     RelationType
 
   source Insight @relation("source", fields: [sourceId], references: [id], onDelete: Cascade)
   target Insight @relation("target", fields: [targetId], references: [id], onDelete: Cascade)

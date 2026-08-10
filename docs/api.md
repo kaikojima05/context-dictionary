@@ -22,6 +22,7 @@ Base URL: `http://localhost:3210`
 | repo | string (max 200) | No | リポジトリ名 |
 | branch | string (max 200) | No | ブランチ名 |
 | sessionId | string (max 100) | No | セッション識別ID |
+| version | positive integer | Response only | 楽観ロック用version。更新ごとに増加 |
 | tags | string[] | No | タグ名のリスト (存在しないタグは自動作成) |
 | followUps | string[] | No | フォローアップ項目のリスト |
 | relations | Relation[] | No | 関連する知見へのリンク |
@@ -168,6 +169,8 @@ curl "http://localhost:3210/api/insights?repo=billing-service"
 
 **Response** `200 OK` — 更新後の Insight オブジェクト
 
+RESTの既存PATCH契約は互換性のためlast-write-winsを維持する。MCPの`upsert`は明示IDと`expectedVersion`一致を必須とする。
+
 ---
 
 ## Follow-ups
@@ -197,6 +200,8 @@ curl "http://localhost:3210/api/insights?repo=billing-service"
 | resolved | boolean | Yes | 解決済みかどうか |
 
 **Response** `200 OK` — 更新後の FollowUp オブジェクト
+
+FollowUpには`updatedAt`と、解決時だけ`resolvedAt`が含まれる。再openすると`resolvedAt`は`null`へ戻る。
 
 ---
 

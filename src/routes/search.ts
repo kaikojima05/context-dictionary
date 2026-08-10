@@ -1,25 +1,12 @@
 import { FastifyInstance } from "fastify";
-import prisma from "../db/client.js";
+import { ContextServiceApi } from "../services/context-service.js";
 
-export default async function searchRoutes(app: FastifyInstance) {
+export type SearchRouteOptions = { service: ContextServiceApi };
+
+export default async function searchRoutes(app: FastifyInstance, options: SearchRouteOptions) {
   app.get("/api/search", async (request, reply) => {
     const { q, type, agent } = request.query as Record<string, string | undefined>;
     if (!q) return reply.status(400).send({ error: "Query parameter 'q' is required" });
-
-    return prisma.insight.findMany({
-      where: {
-        content: { search: q },
-        ...(type && { type }),
-        ...(agent && { agent }),
-      },
-      include: {
-        tags: { include: { tag: true } },
-        followUps: true,
-        relationsAsSource: { include: { target: true } },
-        relationsAsTarget: { include: { source: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+    return options.service.legacySearch(q, type, agent);
   });
 }

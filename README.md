@@ -2,7 +2,7 @@
 
 CLI コーディングエージェント（Claude Code, Copilot CLI, Codex など）との作業セッションを構造化して記録・検索するためのシステム。
 
-セッションごとの要約、学び、意思決定、フォローアップなどを REST API 経由で蓄積し、過去のコンテキストを素早く引き出せるようにする。
+セッションごとの要約、学び、意思決定、フォローアップなどを REST API またはlocal stdio MCP経由で蓄積し、過去のコンテキストを素早く引き出せるようにする。
 
 ## 技術スタック
 
@@ -11,6 +11,7 @@ CLI コーディングエージェント（Claude Code, Copilot CLI, Codex な�
 - **ORM**: Prisma
 - **DB**: MySQL 8.0 (Docker)
 - **CLI**: Commander
+- **MCP**: Model Context Protocol TypeScript SDK 1.30.0（stdio）
 
 ## セットアップ
 
@@ -60,17 +61,36 @@ Base URL: `http://localhost:3210`
 
 | メソッド | パス | 概要 |
 |---|---|---|
-| `POST` | `/api/entries` | エントリ作成 |
-| `GET` | `/api/entries` | エントリ一覧（フィルタ・ページング対応） |
-| `GET` | `/api/entries/:id` | エントリ詳細 |
-| `PATCH` | `/api/entries/:id` | エントリ更新 |
-| `POST` | `/api/entries/:id/follow-ups` | フォローアップ追加 |
+| `POST` | `/api/insights` | Insight作成 |
+| `GET` | `/api/insights` | Insight一覧（フィルタ・ページング対応） |
+| `GET` | `/api/insights/:id` | Insight詳細 |
+| `PATCH` | `/api/insights/:id` | Insight更新 |
+| `POST` | `/api/insights/:id/follow-ups` | フォローアップ追加 |
 | `PATCH` | `/api/follow-ups/:id` | フォローアップの解決状態更新 |
 | `GET` | `/api/tags` | タグ一覧（使用回数付き） |
 | `GET` | `/api/search?q=...` | 全文検索 |
 | `GET` | `/health` | ヘルスチェック |
 
 詳細は [docs/api.md](docs/api.md) を参照。
+
+### MCP server
+
+MCP clientからはlocal stdio processとして起動する。logはstdoutへ出さない。
+
+```bash
+npm run mcp
+```
+
+公開tool:
+
+| tool | 概要 |
+|---|---|
+| `search` | repo・typeの段階緩和、ID重複除外、決定的rankingを行う検索 |
+| `get` | 明示IDのInsightとversionを取得 |
+| `upsert` | create、または明示ID・expectedVersion一致時だけupdate |
+| `follow_up` | follow-upのadd・resolve・reopen |
+
+読み取りtoolはread-only annotation、書き込みtoolは非read-only annotationを公開する。実際の書き込み承認はclient設定でも強制する。
 
 ### CLI
 
@@ -93,6 +113,9 @@ npx tsx src/cli.ts search "JWT"
 | コマンド | 説明 |
 |---|---|
 | `npm run dev` | 開発サーバー起動 |
+| `npm run mcp` | local stdio MCP server起動 |
+| `npm test` | service・REST・MCP protocol test |
+| `npm run typecheck` | TypeScript型検査 |
 | `npm run db:migrate` | Prisma マイグレーション実行 |
 | `npm run db:generate` | Prisma クライアント生成 |
 | `npm run db:studio` | Prisma Studio 起動 |
